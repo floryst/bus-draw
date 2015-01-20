@@ -1,0 +1,86 @@
+<html>
+<head>
+<style type="text/css">
+*{
+margin:0;
+padding:0;
+}
+</style>
+</head>
+<body>
+
+<canvas width="1000" height="600" id="c"></canvas>
+
+<button id="clear">Clear</button>
+<script type="text/javascript">
+
+var ws;
+
+var d,ctx;
+
+document.getElementById("clear").onclick = function() {
+	ws.send("clear");
+}
+var c = document.getElementById("c");
+var c_mv_active = false;
+
+c.onmousedown = function(e) {
+	c_mv_active = true;
+	ws.send([parseInt(e.clientX), parseInt(e.clientY)]);
+};
+c.onmouseup = function(e) {
+	c_mv_active = false;
+};
+c.onmousemove = function(e) {
+	if (c_mv_active)
+		ws.send([parseInt(e.clientX), parseInt(e.clientY)]);
+};
+
+document.addEventListener("touchstart", function(e) {
+    c_mv_active = true;
+	touch = e.changedTouches[0];
+	/* don't forget ot parseInt() here b/c touch.clientX is a float */
+	ws.send([parseInt(touch.clientX), parseInt(touch.clientY)]);
+}, false);
+
+document.addEventListener("touchmove", function(e) {
+	if (c_mv_active) {
+		touch = e.changedTouches[0];
+		ws.send([parseInt(touch.clientX), parseInt(touch.clientY)]);
+	}
+}, false);
+
+document.addEventListener("touchend", function(e) {
+    c_mv_active = false;
+}, false);
+
+function start() {
+	ctx = document.getElementById("c").getContext("2d");
+	if (!window.WebSocket) {
+		alert("Do not have websockets");
+		return;
+	}
+	//ws = new WebSocket("ws://192.168.0.169:9000/ws");
+	ws = new WebSocket("ws://localhost:9000/ws");
+	ws.onopen = function (ev) {
+		ws.send("new");
+	};
+	ws.onmessage = function (ev) {
+		if (ev.data == "clear") {
+			ctx.clearRect(0,0,1000,600);
+			return;
+		}
+		d = JSON.parse(ev.data);
+		console.log(d);
+
+		for (var i = 0; i < d.length; i++) {
+			ctx.fillRect(parseInt(d[i][0]), parseInt(d[i][1]), 4, 4);
+		}
+	};
+}
+
+start();
+
+</script>
+</body>
+</html>
